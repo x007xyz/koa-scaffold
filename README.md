@@ -66,3 +66,54 @@ module.exports = api.routes()
 执行命令`node ./server/index.js`，运行程序，使用postman访问路由，访问`/api/test`时，如果没有参数name，状态码为422，提示Validation Failed，而我们带上参数name，返回结果为我们请求的参数；使用postman模拟文件上传，调用`/api/upload`接口，上传成功显示upload success，我们项目中的dist文件夹也多出了上传的文件（dist文件夹需要先创建，不然程序会报错）。
 
 为了方便我们调试程序，我们使用`nodemon`启动程序，首先运行`yarn run nodemon --dev`，然后在`package.json`中添加命令"dev": "nodemon ./server/index.js"，之后我们启动程序只需要运行`yarn run dev`即可，如果项目进行了修改，程序自动会自动重新运行。
+
+## 页面与资源
+
+我们使用`koa-static`来实现静态资源的访问；生成页面一般会使用`koa-views`+相应的模板引擎的方式来实现，但是我准备使用`atr-tempate`来生成页面，根据官网的说明我们使用`koa-art-template`即可：
+```javascript
+const static = require('koa-static')
+app.use(static(path.resolve(__dirname, '../dist')))
+
+const render = require('koa-art-template')
+render(app, {
+  root: path.join(__dirname, 'view'),
+  extname: '.art',
+  debug: process.env.NODE_ENV !== 'production'
+})
+```
+新建页面和样式文件，并且添加路由：
+```html
+<!-- server/view/index.art -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{title}}</title>
+</head>
+<body>
+  <div id="app">
+    Hello World
+  </div>
+  <link rel="stylesheet" href="style.css">
+</body>
+</html>
+```
+```css
+/* dist/style.css */
+#app {
+  color: red;
+  font-size: 24px;
+}
+```
+```javascript
+// server/routes.js
+const Router = require('koa-router')
+const page = new Router()
+
+page.get('/index',async ctx => {
+  await ctx.render('index', { title: 'Hello' })
+})
+
+module.exports = page.routes()
+```

@@ -1,3 +1,5 @@
+const path = require('path')
+
 const Koa = require('koa')
 const app = new Koa()
 
@@ -10,6 +12,17 @@ app.use(require('koa-body')({
 
 require('koa-parameter')(app)
 
+const static = require('koa-static')
+app.use(static(path.resolve(__dirname, '../dist')))
+
+const render = require('koa-art-template')
+render(app, {
+  root: path.join(__dirname, 'view'),
+  extname: '.art',
+  debug: process.env.NODE_ENV !== 'production'
+})
+
 app.use(require('./api'))
+app.use(require('./routes'))
 
 app.listen(3000)

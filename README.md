@@ -117,3 +117,37 @@ page.get('/index',async ctx => {
 
 module.exports = page.routes()
 ```
+## 连接数据库
+
+数据库用于持久化保存数据，服务端的开发往往离不开数据库的使用。MongoDB 是一个基于分布式文件存储的开源数据库系统。在`node.js`中我们可以通过`mongoose`操作MongoDB数据库。
+
+首先我们参考[菜鸟教程](https://www.runoob.com/mongodb/mongodb-tutorial.html)安装好MongoDB数据库，然后为项目添加`mongoose`。
+
+在项目中操作数据库，第一步先连接数据库，新建dbconnect.js文件：
+```javascript
+const mongoose = require('mongoose')
+const db = require('../config/db')
+mongoose.connect(db.dbname, {useNewUrlParser: true, useUnifiedTopology: true}, err => {
+    if (err) {
+        log.fatal({msg: '[Mongoose] database connect failed!', err})
+    } else {
+        console.log('[Mongoose] database connect success!')
+    }
+})
+module.exports = mongoose
+```
+`Mongoose`中所有东西都是从`Schema`，`Schema`类似于MySQL中的数据结构，`Schema`约束了MongoDB中每个集合的字段结构，限制程序随意修改数据库；`Model`是根据`Schema`定义的结构编译生成的高级构造函数，`Model`的实例被称为`Document`，`Model`负责从底层MongoDB数据库中创建和读取文档；关于`Mongoose`的其他概念，还有`Schema`、`Model`、`Document`三者相关的接口可以查看[Mongoose官方文档](https://mongoosejs.com/docs/models.html)。
+
+在项目中新建`model/User.js`：
+```javascript
+const { Schema, model } = require('mongoose')
+
+const UserSchema = new Schema({
+  username: { type: String, require: true, unique: true },
+  password: { type: String, require: true }
+})
+
+module.exports = model('User', UserSchema)
+```
+在这个文件中，我们定义了`Schema`，然后生成`Model`导出使用，要操作数据库，我们只需要使用`Model`相应的方法即可。
+

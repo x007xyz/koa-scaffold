@@ -22,6 +22,8 @@ render(app, {
   debug: process.env.NODE_ENV !== 'production'
 })
 
+require('./dbconnect')
+
 app.use(require('./api'))
 app.use(require('./routes'))
 

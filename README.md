@@ -151,3 +151,85 @@ module.exports = model('User', UserSchema)
 ```
 在这个文件中，我们定义了`Schema`，然后生成`Model`导出使用，要操作数据库，我们只需要使用`Model`相应的方法即可。
 
+## 身份验证
+
+> Passport是Node.js的身份验证中间件。 Passport极其灵活和模块化，可以毫不费力地放入任何基于Express的Web应用程序中。一套全面的策略支持使用用户名和密码，Facebook，Twitter等进行身份验证。
+
+我们准备使用jwt进行身份验证，暂时不使用第三方授权登录，如果想要了解第三方授权登录或者Passport更多的信息可以阅读[官方文档](http://www.passportjs.org/)；在项目安装`koa-passport`和jwt对应的策略`passport-jwt`，新建`auth.js`：
+```javascript
+const keys = require('../config/keys')
+const User = require('./model/User')
+
+
+const JwtStrategy = require('passport-jwt').Strategy
+const ExtractJwt = require('passport-jwt').ExtractJwt
+const opts = {
+  jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+  secretOrKey: keys.secretOrkey
+}
+
+module.exports = passport => {
+  passport.use(new JwtStrategy(opts, (jwt_payload, done) => {
+    User.findById(jwt_payload._id).then(user => {
+      if (user) {
+        done(null, user)
+      } else {
+        done(null, false)
+      }
+    })
+  }))
+}
+```
+然后在项目中使用：
+```js
+const passport = require('koa-passport')
+require('./auth')(passport)
+app.use(passport.initialize())
+```
+新建接口，并使用passport验证身份信息:
+```js
+api.post('/auth', passport.authenticate('jwt', { session: false }), async ctx => {
+  ctx.body = 'auth'
+})
+```
+结果提示Unauthorized，证明身份验证中间件已经生效。接下来我们来实现用户的注册和登录，完善身份验证的整个流程，注册和登录我们会用到`bcrypt`和`jsonwebtoken`，`bcrypt`用于密码的加密和比较，`jsonwebtoken`用于生成token；新增login和register接口：
+```js
+api.post('/login', async ctx => {
+  ctx.verifyParams({
+    username: { type: "string", required: true },
+    password: { type: "string", required: true },
+  })
+  const { username, password } = ctx.request.body
+  const user = await User.findOne({ username })
+  if (user && bcrypt.compareSync(password, user.password)) {
+    const token = jwt.sign({ _id: user._id, username }, keys.secretOrkey, { expiresIn: 3600 })
+    ctx.status = 200
+    ctx.body = { token: 'Bearer ' + token }
+  } else if (user) {
+    ctx.status = 500
+    ctx.body = { error: '密码错误' }
+  } else {
+    ctx.status = 500
+    ctx.body = { error: '用户名不存在' }
+  }
+})
+
+api.post('/register', async ctx => {
+  const { username, password } = ctx.request.body
+  const users = await User.find({ username })
+  if (users.length > 0) {
+    ctx.status = 500
+    ctx.body = { error: '用户名已被占用' }
+  } else {
+    await User.create({ username, password: bcrypt.hashSync(password, keys.salt) }).then(user => {
+      ctx.body = user
+    }).catch(err => {
+      ctx.status = 500
+      ctx.body = { error: err }
+    })
+  }
+})
+```
+调用这两个接口获取用户登录的token，再次访问auth接口，状态码200，正常返回访问信息。
+
+

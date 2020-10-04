@@ -24,6 +24,10 @@ render(app, {
 
 require('./dbconnect')
 
+const passport = require('koa-passport')
+require('./auth')(passport)
+app.use(passport.initialize())
+
 app.use(require('./api'))
 app.use(require('./routes'))
 

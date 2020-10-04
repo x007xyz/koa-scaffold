@@ -24,6 +24,17 @@ render(app, {
 
 require('./dbconnect')
 
+const log4js = require("log4js");
+const logger = log4js.getLogger();
+logger.level = "info";
+
+app.use(async (ctx, next) => {
+  const start = new Date()
+  await next()
+  const ms = new Date() - start
+  logger.info(`${ctx.method} ${ctx.url} - ${ms}ms`)
+})
+
 const passport = require('koa-passport')
 require('./auth')(passport)
 app.use(passport.initialize())

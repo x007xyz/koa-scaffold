@@ -1,11 +1,13 @@
-# Koa-基础框架构建
+# Koa系列-基础功能实现
 > Koa 是一个新的 web 框架，由 Express 幕后的原班人马打造， 致力于成为 web 应用和 API 开发领域中的一个更小、更富有表现力、更健壮的基石。
 
 Koa与Express风格类似，不同在于默认异步解决方案和采用洋葱圈模型的中间件。
 
-Koa没有绑定任何中间件，简单的同时也缺失了很多Web程序基础的功能，现在我们使用Koa来实现一般Web程序中基础的功能。
+Koa没有绑定任何中间件，简单的同时也缺失了很多Web程序基础的功能，现在我们实现这些基础的功能：
+![koa架构.png](https://imgkr2.cn-bj.ufileos.com/2c1e897d-53f5-44e4-937e-6c254a354c57.png?UCloudPublicKey=TOKEN_8d8b72be-579a-4e83-bfd0-5f6ce1546f13&Signature=VI3rvEwVDBHgpsddDr6RiJtod%252Fk%253D&Expires=1601890371)
 
-## 实现路由功能
+
+## 路由
 
 实现路由功能我们使用到三个中间件，分别是`koa-router`、`koa-body`、`koa-parameter`：
 1. 其中`koa-router`来实现最基础的路由功能，将不同的url分发到相应的处理函数中；
@@ -63,7 +65,15 @@ api.post('/upload', ctx => {
 
 module.exports = api.routes()
 ```
-执行命令`node ./server/index.js`，运行程序，使用postman访问路由，访问`/api/test`时，如果没有参数name，状态码为422，提示Validation Failed，而我们带上参数name，返回结果为我们请求的参数；使用postman模拟文件上传，调用`/api/upload`接口，上传成功显示upload success，我们项目中的dist文件夹也多出了上传的文件（dist文件夹需要先创建，不然程序会报错）。
+执行命令`node ./server/index.js`，运行程序，使用postman访问路由，访问`/api/test`时，如果没有参数name，状态码为422，提示Validation Failed
+![20201001155137.jpg](https://imgkr2.cn-bj.ufileos.com/b647ac35-f6b1-41c4-a031-a9b0f44b5542.png?UCloudPublicKey=TOKEN_8d8b72be-579a-4e83-bfd0-5f6ce1546f13&Signature=dobzNRkQOIVMao6jW3%252FCbpjTTdE%253D&Expires=1601890190)
+
+而我们带上参数name，返回结果为我们请求的参数
+![20201001155221.jpg](https://imgkr2.cn-bj.ufileos.com/422c624a-0a93-4386-9b4c-ebbc6f03ab7c.png?UCloudPublicKey=TOKEN_8d8b72be-579a-4e83-bfd0-5f6ce1546f13&Signature=6B5TKYgFZq784KB7aW2YaS9cQr4%253D&Expires=1601890224)
+
+使用postman模拟文件上传，调用`/api/upload`接口，上传成功显示upload success，我们项目中的dist文件夹也多出了上传的文件（dist文件夹需要先创建，不然程序会报错）。
+![20201001155246.jpg](https://imgkr2.cn-bj.ufileos.com/b57992f0-1951-4595-a5f9-31c86d424099.png?UCloudPublicKey=TOKEN_8d8b72be-579a-4e83-bfd0-5f6ce1546f13&Signature=yHk0NYiYrQl8CUYSR0V67aky9Lg%253D&Expires=1601890122)
+
 
 为了方便我们调试程序，我们使用`nodemon`启动程序，首先运行`yarn run nodemon --dev`，然后在`package.json`中添加命令"dev": "nodemon ./server/index.js"，之后我们启动程序只需要运行`yarn run dev`即可，如果项目进行了修改，程序自动会自动重新运行。
 
@@ -192,7 +202,10 @@ api.post('/auth', passport.authenticate('jwt', { session: false }), async ctx =>
   ctx.body = 'auth'
 })
 ```
-结果提示Unauthorized，证明身份验证中间件已经生效。接下来我们来实现用户的注册和登录，完善身份验证的整个流程，注册和登录我们会用到`bcrypt`和`jsonwebtoken`，`bcrypt`用于密码的加密和比较，`jsonwebtoken`用于生成token；新增login和register接口：
+结果提示Unauthorized，证明身份验证中间件已经生效。
+![](https://imgkr2.cn-bj.ufileos.com/5511772f-9d76-422e-9979-d43ccaf17094.png?UCloudPublicKey=TOKEN_8d8b72be-579a-4e83-bfd0-5f6ce1546f13&Signature=u%252FK0FgCFaShQdvc4nufuP%252Bdgo9U%253D&Expires=1601890045)
+
+接下来我们来实现用户的注册和登录，完善身份验证的整个流程，注册和登录我们会用到`bcrypt`和`jsonwebtoken`，`bcrypt`用于密码的加密和比较，`jsonwebtoken`用于生成token；新增login和register接口：
 ```js
 api.post('/login', async ctx => {
   ctx.verifyParams({
@@ -231,5 +244,24 @@ api.post('/register', async ctx => {
 })
 ```
 调用这两个接口获取用户登录的token，再次访问auth接口，状态码200，正常返回访问信息。
+![20201004163733.jpg](https://imgkr2.cn-bj.ufileos.com/bb53dd0d-ccc2-4381-ac57-a8360cd08b74.png?UCloudPublicKey=TOKEN_8d8b72be-579a-4e83-bfd0-5f6ce1546f13&Signature=syuJEEgGqqElcQpOe9U3eKCWVdU%253D&Expires=1601890008)
 
 
+## 日志
+
+`log4js`是Node.js的日志工具，它提供丰富的日志功能，详细的功能的使用可以查看[log4js 完全讲解](https://juejin.im/post/6844903442054381582)和[官方文档](https://github.com/log4js-node/log4js-node)，我们现在只实现最简单的路由访问日志打印功能：
+```js
+const log4js = require("log4js");
+const logger = log4js.getLogger();
+logger.level = "info";
+
+app.use(async (ctx, next) => {
+  const start = new Date()
+  await next()
+  const ms = new Date() - start
+  logger.info(`${ctx.method} ${ctx.url} - ${ms}ms`)
+})
+```
+访问接口控制台会打印简单的访问日志
+![20201004171433.jpg](https://imgkr2.cn-bj.ufileos.com/93c36db1-f573-4a4d-9b64-1f81bdf7041f.png?UCloudPublicKey=TOKEN_8d8b72be-579a-4e83-bfd0-5f6ce1546f13&Signature=P%252Bw9wnpJ9qo%252FPt9LFhOk7QTDAb8%253D&Expires=1601889955)
+至此一个简单koa项目的基础功能我们就实现好了，具体代码实现可以查看[项目地址](https://github.com/x007xyz/koa-scaffold.git)。
